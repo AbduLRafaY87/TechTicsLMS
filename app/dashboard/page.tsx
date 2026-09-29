@@ -12,8 +12,9 @@
  *   import '@fortawesome/fontawesome-free/css/all.min.css';
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Poppins } from 'next/font/google';
 import { useAuth } from '../components/AuthProvider';
 import Sidebar from '../components/Sidebar';
 import { useCache } from '../../lib/useCache';
@@ -77,6 +78,7 @@ interface StudentDashboardData {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const ACCENT_COLORS = ['#1E3A5F', '#2563EB', '#0F766E', '#6D28D9', '#B45309', '#DC2626', '#0369A1', '#4338CA'];
+const poppins = Poppins({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800', '900'] });
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -177,6 +179,9 @@ export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const userId = user?.id ?? null;
   const isStudent = user && user.role !== 'TEACHER' && user.role !== 'ADMIN';
 
@@ -225,7 +230,7 @@ export default function DashboardPage() {
   );
 
   // ── Auth / role guards ────────────────────────────────────────────────────
-
+  if (!mounted) return null;
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
@@ -302,12 +307,12 @@ export default function DashboardPage() {
     <>
       <FontAwesomeLoader />
 
-      <div className="flex min-h-screen bg-slate-50" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
+      <div className={`flex h-screen overflow-hidden bg-slate-50 ${poppins.className}`}>
         <Sidebar activeItem="Dashboard" />
 
-        <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+        <main className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
           {/* Top Bar */}
-          <header className="bg-white border-b border-slate-200 px-8 h-16 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+          <header className="bg-white border-b border-slate-200 px-8 h-16 flex items-center justify-between sticky top-14 md:top-0 z-10 shrink-0 shadow-sm">
             <div>
               <div className="text-slate-900 font-bold text-[15px]">
                 {greeting}, {displayName}
@@ -342,7 +347,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto px-8 py-7 space-y-6">
+          <div className="flex-1 min-h-0 overflow-y-auto px-8 py-7 space-y-6">
 
             {/* Welcome Banner — renders immediately from useAuth, no wait */}
             <div

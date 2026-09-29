@@ -239,6 +239,7 @@ export default function TeacherDashboard() {
   }, [fetchData]);
 
   // ── Auth guard render ─────────────────────────────────────────────────────────
+  if (!mounted) return null;
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">

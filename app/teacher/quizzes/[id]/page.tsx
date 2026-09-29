@@ -936,6 +936,9 @@ export default function TeacherQuizManagePage() {
   const params   = useParams();
   const quizId   = params?.id as string;
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const [quiz, setQuiz]       = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
@@ -978,6 +981,8 @@ export default function TeacherQuizManagePage() {
       showToast(e.message || 'Failed to update', false);
     } finally { setToggling(false); }
   };
+
+  if (!mounted) return null;
 
   if (authLoading || loading) {
     return (

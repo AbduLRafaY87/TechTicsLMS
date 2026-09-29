@@ -524,7 +524,73 @@ function Toast({ msg, ok, onDone }: { msg: string; ok: boolean; onDone: () => vo
 
 // ─── Enroll Gate ──────────────────────────────────────────────────────────────
 
-function EnrollGate({ course, onEnroll, enrolling }: { course: Course; onEnroll: () => void; enrolling: boolean }) {
+type EnrollStatus = 'enrolled' | 'pending' | 'rejected' | 'none';
+
+function EnrollGate({
+  course,
+  enrollStatus,
+  onEnroll,
+  onCancel,
+  enrolling,
+}: {
+  course: Course;
+  enrollStatus: EnrollStatus;
+  onEnroll: () => void;
+  onCancel: () => void;
+  enrolling: boolean;
+}) {
+  if (enrollStatus === 'pending') {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center px-6">
+        <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center mb-5">
+          <i className="fa-solid fa-clock text-2xl text-amber-500" />
+        </div>
+        <h3 className="text-lg font-black text-slate-800 mb-2">Enrollment Request Pending</h3>
+        <p className="text-slate-500 text-sm max-w-sm mb-6">
+          Your request to join this course has been submitted and is currently awaiting administrator review.
+        </p>
+        <button
+          onClick={onCancel}
+          disabled={enrolling}
+          className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-300 text-slate-700 text-sm font-semibold rounded-xl hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-60"
+        >
+          {enrolling ? (
+            <span className="w-4 h-4 border-2 border-slate-400 border-t-slate-700 rounded-full animate-spin" />
+          ) : (
+            <i className="fa-solid fa-times text-sm" />
+          )}
+          Cancel Request
+        </button>
+      </div>
+    );
+  }
+
+  if (enrollStatus === 'rejected') {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center px-6">
+        <div className="w-16 h-16 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center mb-5">
+          <i className="fa-solid fa-times-circle text-2xl text-red-500" />
+        </div>
+        <h3 className="text-lg font-black text-slate-800 mb-2">Enrollment Request Rejected</h3>
+        <p className="text-slate-500 text-sm max-w-sm mb-6">
+          Your previous enrollment request was not approved. You can submit another request if needed.
+        </p>
+        <button
+          onClick={onEnroll}
+          disabled={enrolling}
+          className="flex items-center gap-2 px-6 py-3 bg-blue-700 text-white text-sm font-bold rounded-xl hover:bg-blue-800 transition-colors shadow-sm disabled:opacity-60"
+        >
+          {enrolling ? (
+            <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+          ) : (
+            <i className="fa-solid fa-rotate-right text-sm" />
+          )}
+          Request Again
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center px-6">
       <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-5">
@@ -534,12 +600,17 @@ function EnrollGate({ course, onEnroll, enrolling }: { course: Course; onEnroll:
       <p className="text-slate-400 text-sm max-w-xs mb-6">
         You need to be enrolled to watch lessons, take quizzes, and submit assignments.
       </p>
-      <button onClick={onEnroll} disabled={enrolling}
-        className="flex items-center gap-2 px-6 py-3 bg-blue-700 text-white text-sm font-bold rounded-xl hover:bg-blue-800 transition-colors shadow-sm disabled:opacity-60">
-        {enrolling
-          ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-          : <i className="fa-solid fa-graduation-cap text-sm" />}
-        {enrolling ? 'Enrolling...' : "Enroll Now - It's Free"}
+      <button
+        onClick={onEnroll}
+        disabled={enrolling}
+        className="flex items-center gap-2 px-6 py-3 bg-blue-700 text-white text-sm font-bold rounded-xl hover:bg-blue-800 transition-colors shadow-sm disabled:opacity-60"
+      >
+        {enrolling ? (
+          <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+        ) : (
+          <i className="fa-solid fa-graduation-cap text-sm" />
+        )}
+        Enroll Now - It's Free
       </button>
     </div>
   );
@@ -1402,9 +1473,13 @@ export default function StudentCoursePage() {
   const params   = useParams();
   const courseId = params?.id as string;
 
+  const [mounted, setMounted]           = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const [course, setCourse]             = useState<Course | null>(null);
   const [modules, setModules]           = useState<Array<Module & { items: CurriculumItem[] }>>([]);
   const [isEnrolled, setIsEnrolled]     = useState(false);
+  const [enrollStatus, setEnrollStatus] = useState<EnrollStatus>('none');
   const [progress, setProgress]         = useState<Set<string>>(new Set());
   const [loading, setLoading]           = useState(true);
   const [revalidating, setRevalidating] = useState(false);
@@ -1451,11 +1526,12 @@ export default function StudentCoursePage() {
 
     if (cachedCourse) {
       setCourse(cachedCourse);
-      // Use String() comparison to avoid type mismatch (number vs string IDs)
-      const enrolled = cachedEnroll
-        ? cachedEnroll.map(String).includes(String(courseId))
-        : false;
+      // Check enrollment: prefer the course's own enrollments list, fall back to cached IDs
+      const enrolledFromCourse = isCourseEnrolledFromRaw(cachedCourse, user!.id);
+      const enrolledFromCache  = cachedEnroll ? cachedEnroll.map(String).includes(String(courseId)) : false;
+      const enrolled = enrolledFromCourse || enrolledFromCache;
       setIsEnrolled(enrolled);
+      setEnrollStatus(enrolled ? 'enrolled' : 'none');
       if (cachedProgress) setProgress(new Set(cachedProgress));
 
       const builtModules = attachCourseItems(
@@ -1484,9 +1560,10 @@ export default function StudentCoursePage() {
 
     try {
       const needsEnrollFetch = !cachedEnroll || cache.isStale(eKey);
-      const [courseRes, meRes] = await Promise.all([
+      const [courseRes, meRes, requestsRes] = await Promise.all([
         api.getCourseById(courseId),
         needsEnrollFetch ? api.me() : Promise.resolve(null),
+        api.getMyEnrollmentRequests().catch(() => null),
       ]);
 
       const raw = (courseRes as any).data;
@@ -1502,9 +1579,9 @@ export default function StudentCoursePage() {
 
       let enrolled = false;
 
-      // ── First: check if the course response itself says we're enrolled ──
-      // (some backends embed isEnrolled or an enrollments array on the course)
-      if (isCourseEnrolledFromRaw(raw, user!.id)) {
+      // ── First: check if the course data itself says we're enrolled ──
+      // courseData.enrollments is [{user:{id,name,avatar}}] from getCourseById
+      if (isCourseEnrolledFromRaw(courseData, user!.id)) {
         enrolled = true;
       }
 
@@ -1527,6 +1604,26 @@ export default function StudentCoursePage() {
         if (!enrolled) enrolled = cachedEnroll.map(String).includes(String(courseId));
       }
       setIsEnrolled(enrolled);
+
+      // Check request status if not directly enrolled
+      if (enrolled) {
+        setEnrollStatus('enrolled');
+      } else {
+        const reqData = (requestsRes as any)?.data;
+        const reqList: any[] =
+          Array.isArray(reqData?.data?.requests) ? reqData.data.requests :
+          Array.isArray(reqData?.requests) ? reqData.requests :
+          Array.isArray(reqData?.data) ? reqData.data :
+          Array.isArray(reqData) ? reqData : [];
+        const match = reqList.find((r: any) => String(r.courseId || r.course?.id) === String(courseId));
+        if (match?.status === 'PENDING') {
+          setEnrollStatus('pending');
+        } else if (match?.status === 'REJECTED') {
+          setEnrollStatus('rejected');
+        } else {
+          setEnrollStatus('none');
+        }
+      }
 
       if (opts.setActive && builtModules.length && !activeItem) {
         const firstItem = builtModules.flatMap(m => m.items).find(i => i.type !== 'lesson' || i.isFree || enrolled);
@@ -1571,26 +1668,46 @@ export default function StudentCoursePage() {
   // ── Enroll ─────────────────────────────────────────────────────────────────
 
   const handleEnroll = async () => {
+    if (!user) return;
     setEnrolling(true);
     try {
       await api.enrollCourse(courseId);
-      setIsEnrolled(true);
-      showToast('Enrolled! Welcome to the course.', true);
+      setEnrollStatus('pending');
+      showToast('Enrollment request sent! Awaiting admin approval.', true);
       if (user?.id) invalidateCourseData(user.id);
-      fetchData({ setActive: true, background: true });
+      fetchData({ background: true });
     } catch (e: any) {
       const msg: string = e.message ?? '';
-      if (
-        msg.toLowerCase().includes('already enrolled') ||
-        msg.toLowerCase().includes('already exists') ||
-        (e as any)?.status === 409
-      ) {
+      if (msg.toLowerCase().includes('already enrolled')) {
         setIsEnrolled(true);
+        setEnrollStatus('enrolled');
         showToast('You are already enrolled in this course.', true);
         fetchData({ setActive: true, background: true });
+      } else if (msg.toLowerCase().includes('pending') || (e as any)?.status === 409) {
+        setEnrollStatus('pending');
+        showToast('Your enrollment request is pending approval.', true);
       } else {
-        showToast(msg || 'Enrollment failed', false);
+        showToast(msg || 'Enrollment request failed', false);
       }
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
+  const handleCancelEnrollment = async () => {
+    if (!user) return;
+    setEnrolling(true);
+    const prevStatus = enrollStatus;
+    try {
+      await api.unenrollCourse(courseId);
+      setIsEnrolled(false);
+      setEnrollStatus('none');
+      setProgress(new Set());
+      if (user?.id) invalidateCourseData(user.id);
+      showToast(prevStatus === 'enrolled' ? 'Unenrolled from course.' : 'Request cancelled.', true);
+      fetchData({ background: true });
+    } catch (e: any) {
+      showToast(e.message || 'Failed', false);
     } finally {
       setEnrolling(false);
     }
@@ -1718,6 +1835,8 @@ export default function StudentCoursePage() {
 
   // ── Loading / Error ────────────────────────────────────────────────────────
 
+  if (!mounted) return null;
+
   if (authLoading || (loading && !course)) {
     return (
       <div className="flex min-h-screen bg-slate-50" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
@@ -1821,7 +1940,13 @@ export default function StudentCoursePage() {
           {/* ── Main Content ── */}
           <div className="flex-1 overflow-y-auto">
             {!isEnrolled && !activeItem ? (
-              <EnrollGate course={course} onEnroll={handleEnroll} enrolling={enrolling} />
+              <EnrollGate
+                course={course}
+                enrollStatus={enrollStatus}
+                onEnroll={handleEnroll}
+                onCancel={handleCancelEnrollment}
+                enrolling={enrolling}
+              />
             ) : activeItem ? (
               <>
                 {/* ── Lesson ── */}
@@ -1881,15 +2006,35 @@ export default function StudentCoursePage() {
                       <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 flex items-center justify-between gap-4">
                         <div>
                           <p className="text-sm font-bold text-blue-900">You're watching a free preview</p>
-                          <p className="text-xs text-blue-700 mt-0.5">Enroll to unlock all {totalItems} items and track your progress.</p>
+                          <p className="text-xs text-blue-700 mt-0.5">
+                            {enrollStatus === 'pending'
+                              ? 'Your enrollment request is pending admin approval.'
+                              : `Enroll to unlock all ${totalItems} items and track your progress.`}
+                          </p>
                         </div>
-                        <button onClick={handleEnroll} disabled={enrolling}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white text-sm font-bold rounded-lg hover:bg-blue-800 transition-colors shrink-0 disabled:opacity-60">
-                          {enrolling
-                            ? <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                            : <i className="fa-solid fa-graduation-cap text-xs" />}
-                          Enroll Free
-                        </button>
+                        {enrollStatus === 'pending' ? (
+                          <button
+                            onClick={handleCancelEnrollment}
+                            disabled={enrolling}
+                            className="flex items-center gap-2 px-4 py-2 bg-white border border-amber-300 text-amber-700 text-sm font-bold rounded-lg hover:bg-amber-50 transition-colors shrink-0 disabled:opacity-60"
+                          >
+                            <i className="fa-solid fa-clock text-xs" />
+                            Pending Approval
+                          </button>
+                        ) : (
+                          <button
+                            onClick={handleEnroll}
+                            disabled={enrolling}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white text-sm font-bold rounded-lg hover:bg-blue-800 transition-colors shrink-0 disabled:opacity-60"
+                          >
+                            {enrolling ? (
+                              <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                            ) : (
+                              <i className="fa-solid fa-graduation-cap text-xs" />
+                            )}
+                            {enrollStatus === 'rejected' ? 'Request Again' : 'Enroll Free'}
+                          </button>
+                        )}
                       </div>
                     )}
 
@@ -1934,7 +2079,13 @@ export default function StudentCoursePage() {
                 refreshing={loading || revalidating}
               />
             ) : (
-              <EnrollGate course={course} onEnroll={handleEnroll} enrolling={enrolling} />
+              <EnrollGate
+                course={course}
+                enrollStatus={enrollStatus}
+                onEnroll={handleEnroll}
+                onCancel={handleCancelEnrollment}
+                enrolling={enrolling}
+              />
             )}
           </div>
 

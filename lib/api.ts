@@ -66,8 +66,10 @@ export interface EnrollmentRequest {
   courseId: string;
   status: EnrollmentRequestStatus;
   adminNote?: string | null;
-  createdAt: string;
-  updatedAt: string;
+  requestedAt?: string;
+  reviewedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
   user?: Pick<User, 'id' | 'name' | 'email' | 'avatar'>;
   course?: Pick<Course, 'id' | 'title' | 'thumbnail'> & {
     teacher?: Pick<User, 'id' | 'name'>;

@@ -275,6 +275,9 @@ export default function TeacherStudentsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   // Local state for filters
   const [search, setSearch] = useState('');
   const [courseFilter, setCourseFilter] = useState<string>('all');
@@ -362,6 +365,7 @@ export default function TeacherStudentsPage() {
   const courses = cachedData?.courses ?? [];
 
   // ── Auth guard ─────────────────────────────────────────────────────────────
+  if (!mounted) return null;
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">

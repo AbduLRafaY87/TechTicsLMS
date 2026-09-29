@@ -1044,6 +1044,9 @@ export default function TeacherQuizzesPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const [quizzes, setQuizzes]       = useState<Quiz[]>([]);
   const [courses, setCourses]       = useState<{ id: string; title: string }[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -1153,6 +1156,7 @@ export default function TeacherQuizzesPage() {
     } finally { setDeleting(false); }
   };
 
+  if (!mounted) return null;
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">

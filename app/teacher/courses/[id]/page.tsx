@@ -850,6 +850,9 @@ export default function TeacherCourseManagePage() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const showToast = useCallback((msg: string, ok: boolean) => setToast({ msg, ok }), []);
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const [modules, setModules] = useState<Module[]>([]);
   const [course, setCourse] = useState<Course | null>(null);
 
@@ -1130,6 +1133,8 @@ export default function TeacherCourseManagePage() {
   // server and client. We never early-return a different root element
   // based on authLoading/user — that's what was causing the hydration
   // mismatch. All auth-dependent branching happens *inside* the shell.
+
+  if (!mounted) return null;
 
   const showBlockingSpinner = authLoading || !isAuthorized;
 

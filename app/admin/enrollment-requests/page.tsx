@@ -40,14 +40,20 @@ interface EnrichedRequest extends EnrollmentRequest {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("en-US", {
+function formatDate(d?: string) {
+  if (!d) return "—";
+  const parsed = new Date(d);
+  if (isNaN(parsed.getTime())) return "—";
+  return parsed.toLocaleDateString("en-US", {
     year: "numeric", month: "short", day: "numeric",
   });
 }
 
-function formatTime(d: string) {
-  return new Date(d).toLocaleTimeString("en-US", {
+function formatTime(d?: string) {
+  if (!d) return "";
+  const parsed = new Date(d);
+  if (isNaN(parsed.getTime())) return "";
+  return parsed.toLocaleTimeString("en-US", {
     hour: "2-digit", minute: "2-digit",
   });
 }
@@ -200,8 +206,8 @@ function DetailModal({ req, onClose }: { req: EnrichedRequest; onClose: () => vo
             </div>
             <div className="bg-slate-50 rounded-xl p-3">
               <div className="text-xs text-slate-400 font-medium mb-1">Requested</div>
-              <div className="text-sm font-semibold text-slate-700">{formatDate(req.createdAt)}</div>
-              <div className="text-xs text-slate-400">{formatTime(req.createdAt)}</div>
+              <div className="text-sm font-semibold text-slate-700">{formatDate(req.requestedAt || req.createdAt)}</div>
+              <div className="text-xs text-slate-400">{formatTime(req.requestedAt || req.createdAt)}</div>
             </div>
           </div>
 
@@ -281,7 +287,7 @@ export default function AdminEnrollmentRequestsPage() {
     setError("");
     setSelected(new Set());
     try {
-      const res = await api.admin.getEnrollmentRequests();
+      const res = await api.admin.getEnrollmentRequests("?limit=200");
       const raw: any = res.data;
       const list: EnrichedRequest[] = Array.isArray(raw)
         ? raw
@@ -615,8 +621,8 @@ export default function AdminEnrollmentRequestsPage() {
 
                           {/* Date */}
                           <td className="px-5 py-4 text-slate-400 text-xs hidden lg:table-cell">
-                            <div>{formatDate(req.createdAt)}</div>
-                            <div>{formatTime(req.createdAt)}</div>
+                            <div>{formatDate(req.requestedAt || req.createdAt)}</div>
+                            <div>{formatTime(req.requestedAt || req.createdAt)}</div>
                           </td>
 
                           {/* Status */}

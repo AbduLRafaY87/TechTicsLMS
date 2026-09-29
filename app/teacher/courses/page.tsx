@@ -577,6 +577,9 @@ export default function TeacherCoursesPage() {
   const router = useRouter();
 
   const [filter, setFilter]                   = useState<Filter>('All');
+  const [mounted, setMounted]                 = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const [search, setSearch]                   = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage]                       = useState(1);
@@ -709,6 +712,7 @@ export default function TeacherCoursesPage() {
   };
 
   // ── Auth guard ──────────────────────────────────────────────────────────────
+  if (!mounted) return null;
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">

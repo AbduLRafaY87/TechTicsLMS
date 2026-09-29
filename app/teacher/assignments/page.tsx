@@ -368,6 +368,9 @@ export default function TeacherAssignmentsPage() {
   // Preview panel (Google Classroom style — click row to preview)
   const [previewAssignment, setPreviewAssignment] = useState<Assignment | null>(null);
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const isAuthorized = !!user && (user.role === 'TEACHER' || user.role === 'ADMIN');
 
   // ── Auth guard ────────────────────────────────────────────────────────────
@@ -588,6 +591,7 @@ export default function TeacherAssignmentsPage() {
   }
 
   // ── Auth gate render ──────────────────────────────────────────────────────
+  if (!mounted) return null;
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">

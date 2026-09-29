@@ -227,7 +227,6 @@ function SidebarContent({ activeItem, onClose, showClose }: SidebarContentProps)
   return (
     <aside
       className="w-64 flex flex-col h-full bg-white border-r border-slate-200"
-      style={{ fontFamily: "Helvetica, Arial, sans-serif" }}
     >
       {/* Brand */}
       <div className="flex items-center justify-between px-5 py-5 border-b border-slate-100">
@@ -238,7 +237,7 @@ function SidebarContent({ activeItem, onClose, showClose }: SidebarContentProps)
           <div>
             <div className="text-slate-900 font-black text-sm">TechTics</div>
             <div className="text-blue-600 text-[10px] font-semibold uppercase tracking-wider">
-              {authLoading
+              {!mounted || authLoading
                 ? "Loading..."
                 : isAdmin
                 ? "Admin Portal"
@@ -259,7 +258,7 @@ function SidebarContent({ activeItem, onClose, showClose }: SidebarContentProps)
       </div>
 
       {/* Role banner */}
-      {!authLoading && isTeacher && (
+      {mounted && !authLoading && isTeacher && (
         <div className="mx-3 mt-3 px-3 py-2 rounded-lg bg-blue-50 border border-blue-100 flex items-center gap-2">
           <FontAwesomeIcon
             icon={isAdmin ? faShieldAlt : faLayerGroup}
@@ -276,7 +275,7 @@ function SidebarContent({ activeItem, onClose, showClose }: SidebarContentProps)
         className="flex-1 px-1 py-2 overflow-y-auto"
         style={{ scrollbarWidth: "thin", scrollbarColor: "#CBD5E1 transparent" }}
       >
-        {authLoading ? (
+        {!mounted || authLoading ? (
           <div className="space-y-1 px-2 pt-4 animate-pulse">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-10 rounded-lg bg-slate-100 mx-2" />
@@ -344,7 +343,6 @@ export default function Sidebar({ activeItem = "Dashboard" }: SidebarProps): Rea
       {/* Mobile topbar */}
       <div
         className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center gap-3 px-4 h-14 border-b border-slate-200 bg-white shadow-sm"
-        style={{ fontFamily: "Helvetica, Arial, sans-serif" }}
       >
         <button
           onClick={() => setOpen(true)}

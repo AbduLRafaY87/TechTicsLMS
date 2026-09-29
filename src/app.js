@@ -24,6 +24,7 @@ const progressRoutes     = require('./routes/progress.routes');
 const dashboardRoutes    = require('./routes/dashboard.routes');
 const teacherRoutes      = require('./routes/teacher.routes');
 const uploadRoutes       = require('./routes/upload.routes');
+const adminRoutes        = require('./routes/admin.routes');
 
 const app = express();
 
@@ -75,6 +76,7 @@ app.use('/api/progress',      progressRoutes);
 app.use('/api/dashboard',     dashboardRoutes);
 app.use('/api/teacher',       teacherRoutes);
 app.use('/api/upload',        uploadRoutes);
+app.use('/api/admin',         adminRoutes);
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({

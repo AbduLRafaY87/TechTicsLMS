@@ -13,6 +13,12 @@ enum Role {
   STUDENT
 }
 
+enum EnrollmentRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum AssignmentStatus {
   PENDING
   SUBMITTED
@@ -54,6 +60,8 @@ model User {
 
   taughtCourses     Course[]          @relation("TeacherCourses")
   enrollments       Enrollment[]
+  enrollmentRequests EnrollmentRequest[] @relation("EnrollmentRequestStudent")
+  reviewedEnrollmentRequests EnrollmentRequest[] @relation("EnrollmentRequestReviewer")
   submissions       Submission[]
   quizAttempts      QuizAttempt[]
   attendance        Attendance[]
@@ -78,6 +86,7 @@ model Course {
 
   teacher       User           @relation("TeacherCourses", fields: [teacherId], references: [id])
   enrollments   Enrollment[]
+  enrollmentRequests EnrollmentRequest[]
   modules       Module[]
   assignments   Assignment[]
   quizzes       Quiz[]
@@ -98,6 +107,23 @@ model Enrollment {
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
+}
+
+model EnrollmentRequest {
+  id           String                  @id @default(uuid())
+  userId       String
+  courseId     String
+  status       EnrollmentRequestStatus @default(PENDING)
+  requestedAt  DateTime                @default(now())
+  reviewedAt   DateTime?
+  reviewedById String?
+
+  user       User   @relation("EnrollmentRequestStudent", fields: [userId], references: [id], onDelete: Cascade)
+  course     Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  reviewedBy User?  @relation("EnrollmentRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@unique([userId, courseId])
+  @@index([status, requestedAt])
 }
 
 model Module {

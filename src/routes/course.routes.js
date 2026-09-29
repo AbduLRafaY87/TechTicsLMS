@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const {
   getAllCourses, getCourseById, createCourse, updateCourse, deleteCourse,
-  enrollCourse, unenrollCourse, getCourseStudents, getMyCourses,
+  enrollCourse, unenrollCourse, getCourseStudents, getMyCourses, getMyEnrollmentRequests,
 } = require('../controllers/course.controller');
 const { authenticate } = require('../middleware/auth');
 const { authorize } = require('../middleware/role');
@@ -14,6 +14,7 @@ router.get('/', getAllCourses);
 
 // Authenticated routes — specific paths before /:id
 router.get('/my-courses', authenticate, getMyCourses);
+router.get('/my-enrollment-requests', authenticate, authorize('STUDENT'), getMyEnrollmentRequests);
 
 // Param routes
 router.get('/:id', getCourseById);

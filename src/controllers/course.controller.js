@@ -130,24 +130,57 @@ const enrollCourse = async (req, res) => {
   try {
     const course = await prisma.course.findUnique({ where: { id: req.params.id } });
     if (!course) return res.status(404).json({ success: false, message: 'Course not found' });
+    if (!course.isPublished) return res.status(404).json({ success: false, message: 'Course not found' });
 
-    const enrollment = await prisma.enrollment.create({
-      data: { userId: req.user.id, courseId: req.params.id },
-    });
+    const enrollmentKey = { userId_courseId: { userId: req.user.id, courseId: req.params.id } };
+    const existingEnrollment = await prisma.enrollment.findUnique({ where: enrollmentKey });
+    if (existingEnrollment) return res.status(409).json({ success: false, message: 'Already enrolled' });
 
-    // Notify the teacher
+    const existingRequest = await prisma.enrollmentRequest.findUnique({ where: enrollmentKey });
+    if (existingRequest?.status === 'PENDING') {
+      return res.status(409).json({ success: false, message: 'Enrollment request is pending', data: { request: existingRequest } });
+    }
+    if (existingRequest?.status === 'APPROVED') {
+      return res.status(409).json({ success: false, message: 'Already enrolled' });
+    }
+
+    const request = existingRequest
+      ? await prisma.enrollmentRequest.update({
+          where: { id: existingRequest.id },
+          data: { status: 'PENDING', requestedAt: new Date(), reviewedAt: null, reviewedById: null },
+        })
+      : await prisma.enrollmentRequest.create({
+          data: { userId: req.user.id, courseId: req.params.id },
+        });
+
+    const admins = await prisma.user.findMany({ where: { role: 'ADMIN' }, select: { id: true } });
     await createBulkNotifications(
-      [course.teacherId],
-      'New Enrollment',
-      `A student enrolled in "${course.title}"`,
+      admins.map((admin) => admin.id),
+      'Enrollment Request',
+      `A student requested to enroll in "${course.title}"`,
       'info',
-      `/courses/${course.id}`
+      '/admin/enrollment-requests'
     );
 
-    return res.status(201).json({ success: true, message: 'Enrolled successfully', data: { enrollment } });
+    return res.status(201).json({ success: true, message: 'Enrollment request submitted', data: { request } });
   } catch (err) {
-    if (err.code === 'P2002') return res.status(409).json({ success: false, message: 'Already enrolled' });
+    if (err.code === 'P2002') return res.status(409).json({ success: false, message: 'Enrollment request already exists' });
     console.error('[enrollCourse]', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+// GET /api/courses/my-enrollment-requests
+const getMyEnrollmentRequests = async (req, res) => {
+  try {
+    const requests = await prisma.enrollmentRequest.findMany({
+      where: { userId: req.user.id },
+      include: { course: { select: { id: true, title: true, thumbnail: true } } },
+      orderBy: { requestedAt: 'desc' },
+    });
+    return res.status(200).json({ success: true, data: { requests } });
+  } catch (err) {
+    console.error('[getMyEnrollmentRequests]', err);
     return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -155,12 +188,31 @@ const enrollCourse = async (req, res) => {
 // DELETE /api/courses/:id/enroll
 const unenrollCourse = async (req, res) => {
   try {
-    await prisma.enrollment.delete({
+    const enrollment = await prisma.enrollment.findUnique({
       where: { userId_courseId: { userId: req.user.id, courseId: req.params.id } },
     });
-    return res.status(200).json({ success: true, message: 'Unenrolled successfully' });
+    const request = await prisma.enrollmentRequest.findUnique({
+      where: { userId_courseId: { userId: req.user.id, courseId: req.params.id } },
+    });
+
+    if (!enrollment && !request) {
+      return res.status(404).json({ success: false, message: 'Enrollment or request not found' });
+    }
+
+    if (enrollment) {
+      await prisma.enrollment.delete({
+        where: { userId_courseId: { userId: req.user.id, courseId: req.params.id } },
+      });
+    }
+
+    if (request) {
+      await prisma.enrollmentRequest.delete({
+        where: { id: request.id },
+      });
+    }
+
+    return res.status(200).json({ success: true, message: 'Unenrolled / request cancelled successfully' });
   } catch (err) {
-    if (err.code === 'P2025') return res.status(404).json({ success: false, message: 'Enrollment not found' });
     console.error('[unenrollCourse]', err);
     return res.status(500).json({ success: false, message: 'Internal server error' });
   }
@@ -198,4 +250,4 @@ const getMyCourses = async (req, res) => {
   }
 };
 
-module.exports = { getAllCourses, getCourseById, createCourse, updateCourse, deleteCourse, enrollCourse, unenrollCourse, getCourseStudents, getMyCourses };
+module.exports = { getAllCourses, getCourseById, createCourse, updateCourse, deleteCourse, enrollCourse, unenrollCourse, getCourseStudents, getMyCourses, getMyEnrollmentRequests };

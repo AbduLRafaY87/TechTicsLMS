@@ -278,6 +278,9 @@ const removeStudentFromCourse = async (req, res) => {
     await prisma.enrollment.deleteMany({
       where: { courseId: req.params.id, userId: req.params.userId },
     });
+    await prisma.enrollmentRequest.deleteMany({
+      where: { courseId: req.params.id, userId: req.params.userId },
+    });
     return res.status(200).json({ success: true, message: 'Student removed from course' });
   } catch (err) {
     console.error('[removeStudentFromCourse]', err);

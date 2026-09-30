@@ -50,7 +50,7 @@ const TEACHER_MAIN_NAV: NavItem[] = [
 // ── Admin Nav ─────────────────────────────────────────────────────────────────
 
 const ADMIN_MAIN_NAV: NavItem[] = [
-  { icon: faTachometerAlt, label: "Dashboard",   href: "/admin/dashboard"     },
+  { icon: faTachometerAlt, label: "Dashboard",   href: "/teacher/dashboard"     },
   { icon: faBook,          label: "Courses",     href: "/teacher/courses"     },
   { icon: faCalendar,      label: "Attendance",  href: "/teacher/attendance"  },
   { icon: faComments,      label: "Discussions", href: "/teacher/discussions" },

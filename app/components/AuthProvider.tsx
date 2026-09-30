@@ -48,19 +48,8 @@ function normalizeUser(raw: any): AuthUser {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Try to hydrate from cache immediately — no loading flash for returning users
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    if (typeof window === 'undefined') return null;
-    const cached = cache.get<AuthUser>(AUTH_TOKEN_KEY);
-    return cached ?? null;
-  });
-  const [loading, setLoading] = useState(() => {
-    // If we have a token but no cached user, we need to fetch
-    if (typeof window === 'undefined') return false;
-    const token = localStorage.getItem('token');
-    const cached = cache.get<AuthUser>(AUTH_TOKEN_KEY);
-    return !!token && !cached;
-  });
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;

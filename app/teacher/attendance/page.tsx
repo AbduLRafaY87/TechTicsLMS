@@ -462,7 +462,7 @@ export default function TeacherAttendancePage() {
         try {
           const res: any = await api.teacher.markAttendance({
             courseId,
-            studentId: row.id,
+            userId: row.id,
             date,
             status,
           });
@@ -527,10 +527,10 @@ export default function TeacherAttendancePage() {
 
     try {
       await api.teacher.markBulkAttendance({
+        courseId,
+        date,
         records: students.map(s => ({
-          courseId,
-          studentId: s.id,
-          date,
+          userId: s.id,
           status: 'present' as const,
         })),
       });

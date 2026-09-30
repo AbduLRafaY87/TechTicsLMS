@@ -274,16 +274,18 @@ export type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused';
 export interface Attendance {
   id: string;
   courseId: string;
-  studentId: string;
+  userId: string;
   date: string;
   status: AttendanceStatus;
 }
 
-export type MarkAttendanceData = Pick<Attendance, 'courseId' | 'studentId' | 'date' | 'status'>;
+export type MarkAttendanceData = Pick<Attendance, 'courseId' | 'userId' | 'date' | 'status'>;
 export type UpdateAttendanceData = Partial<Pick<Attendance, 'status'>>;
 
 export interface BulkAttendanceData {
-  records: MarkAttendanceData[];
+  courseId: string;
+  date: string;
+  records: Array<Pick<Attendance, 'userId' | 'status'>>;
 }
 
 // ── Grades ────────────────────────────────────────────────────────────────────

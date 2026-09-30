@@ -28,11 +28,17 @@ const adminRoutes        = require('./routes/admin.routes');
 
 const app = express();
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://techticslms.vercel.app',
+  ...(process.env.CLIENT_URL || '').split(',').map((origin) => origin.trim()).filter(Boolean),
+];
+
 // ─── Security & Utility Middleware ────────────────────────────────────────────
 app.use(helmet());
 app.use(compression());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: allowedOrigins,
   credentials: true,
 }));
 app.use(morgan('dev'));

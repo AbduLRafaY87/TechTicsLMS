@@ -6,6 +6,9 @@ import { ReactNode } from "react";
 export const metadata = {
   title: "TechTics LMS",
   description: "Learning Management System",
+  icons: {
+    icon: "/fav.png",
+  },
 };
 
 export default function RootLayout({

@@ -4,7 +4,7 @@ import Footer from "./components/Footer";
 import { ReactNode } from "react";
 
 export const metadata = {
-  title: "TechTics LMS",
+  title: "TechTics Club LMS",
   description: "Learning Management System",
   icons: {
     icon: "/fav.png",

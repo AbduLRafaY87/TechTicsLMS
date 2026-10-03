@@ -6,12 +6,19 @@ const prisma = require('./config/prisma');
 
 const PORT = process.env.PORT || 5000;
 
+// Same allowed origins as the REST API (see app.js); CLIENT_URL may be comma-separated
+const socketOrigins = [
+  'http://localhost:3000',
+  'https://techticslms.vercel.app',
+  ...(process.env.CLIENT_URL || '').split(',').map((o) => o.trim()).filter(Boolean),
+];
+
 // ─── HTTP + Socket.io ─────────────────────────────────────────────────────────
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: socketOrigins,
     methods: ['GET', 'POST'],
     credentials: true,
   },
